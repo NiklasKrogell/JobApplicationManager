@@ -113,6 +113,8 @@ folder above.
 
 ### Tech stack
 
+| Area | Technology |
+|---|---|
 | UI | WPF on .NET 10 (`net10.0-windows`) |
 | MVVM | [CommunityToolkit.Mvvm](https://learn.microsoft.com/dotnet/communitytoolkit/mvvm/) 8.4 (`[ObservableProperty]`, `[RelayCommand]`) |
 | Data | EF Core 10 + SQLite, lazy-loading proxies, code-first migrations |
