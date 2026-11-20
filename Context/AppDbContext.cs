@@ -10,15 +10,20 @@ namespace JobApplicationManager.Context
         /// <summary>
         /// Tietokanta sijaitsee käyttäjän LocalAppData-kansiossa, jotta data säilyy
         /// vaikka bin/obj-kansiot siivottaisiin tai sovellus buildattaisiin uudelleen.
-        /// Ympäristömuuttujalla JOBAPPMANAGER_DB_PATH voi käyttää toista kantaa (esim. testaukseen).
+        /// Ympäristömuuttujalla JOBAPPMANAGER_DB_PATH voi käyttää toista kantaa (kehitys ja testaus);
+        /// arvossa saa käyttää ympäristömuuttujia, esim. %LOCALAPPDATA%.
         /// </summary>
         public static string DatabasePath { get; } =
             Environment.GetEnvironmentVariable("JOBAPPMANAGER_DB_PATH") is { Length: > 0 } customPath
-                ? customPath
+                ? Path.GetFullPath(Environment.ExpandEnvironmentVariables(customPath))
                 : Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "JobApplicationManager",
                     "job_applications.db");
+
+        /// <summary>true, kun käytössä on muu kuin oletuskanta (esim. kehitysajo launchSettingsin kautta).</summary>
+        public static bool IsCustomDatabase { get; } =
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JOBAPPMANAGER_DB_PATH"));
 
         public DbSet<Company> Companies { get; set; }
         public DbSet<Industry> Industries { get; set; }

@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "JobApplicationManager (kehityskanta)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "JOBAPPMANAGER_DB_PATH": "%LOCALAPPDATA%\\JobApplicationManager\\job_applications.dev.db"
+      }
+    },
+    "JobApplicationManager (OIKEA data)": {
+      "commandName": "Project"
+    }
+  }
+}

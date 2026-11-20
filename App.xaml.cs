@@ -38,6 +38,9 @@ namespace JobApplicationManager
                 _db.Database.Migrate();
 
                 var window = new MainWindow { DataContext = new MainViewModel(_db, _dialogs) };
+                // Näkyvä merkki siitä, ettei kyseessä ole oikea data (kehitysajo tai testi).
+                if (AppDbContext.IsCustomDatabase)
+                    window.Title += $" [{System.IO.Path.GetFileName(AppDbContext.DatabasePath)}]";
                 MainWindow = window;
                 window.Show();
             }
