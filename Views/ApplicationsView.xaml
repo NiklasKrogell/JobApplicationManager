@@ -1,0 +1,223 @@
+<UserControl x:Class="JobApplicationManager.Views.ApplicationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:JobApplicationManager.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ApplicationsViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="640" d:DesignWidth="1150">
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="420" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="440" MinWidth="340" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Vasen: hakemuslista ===== -->
+        <DockPanel Grid.Column="0">
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="NewApplicationButton" Style="{StaticResource ActionButton}"
+                        Content="+ Uusi hakemus" ToolTip="Ctrl+N"
+                        Command="{Binding NewApplicationCommand}" />
+                <Label Grid.Column="1" Content="Haku:" Padding="12,0,6,0" VerticalAlignment="Center"
+                       Target="{Binding ElementName=SearchBox}" />
+                <TextBox x:Name="SearchBox" Grid.Column="2" VerticalContentAlignment="Center"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Hakee tehtävästä, yrityksestä, sijainnista, yhteyshenkilöstä ja muistiinpanoista" />
+                <ComboBox x:Name="StatusFilterCombo" Grid.Column="3" Width="150" Margin="8,0,0,0"
+                          ItemsSource="{Binding StatusFilterOptions}" DisplayMemberPath="Label"
+                          SelectedItem="{Binding SelectedStatusFilter}"
+                          IsSynchronizedWithCurrentItem="False"
+                          AutomationProperties.Name="Tilasuodatin" />
+            </Grid>
+
+            <TextBlock x:Name="CountText" DockPanel.Dock="Bottom" Margin="0,6,0,0" Foreground="Gray"
+                       Text="{Binding ApplicationsView.Count, StringFormat='Hakemuksia: {0}'}" />
+
+            <DataGrid x:Name="ApplicationsGrid"
+                      ItemsSource="{Binding ApplicationsView}"
+                      SelectedItem="{Binding SelectedApplication}"
+                      IsSynchronizedWithCurrentItem="False"
+                      AutoGenerateColumns="False" IsReadOnly="True"
+                      SelectionMode="Single" SelectionUnit="FullRow"
+                      CanUserAddRows="False" CanUserDeleteRows="False"
+                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E3E3E3" AlternatingRowBackground="#F6F8FA"
+                      Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                      RowHeight="26">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Yritys" Width="*" Binding="{Binding Company.Name}"
+                                        SortMemberPath="Company.Name" />
+                    <DataGridTextColumn Header="Tehtävä" Width="1.6*" Binding="{Binding Position}" />
+                    <DataGridTextColumn Header="Sijainti" Width="*" Binding="{Binding Location}" />
+                    <DataGridTextColumn Header="Haettu" Width="Auto" MinWidth="80"
+                                        Binding="{Binding ApplicationDate, StringFormat=d}" />
+                    <DataGridTextColumn Header="Tila" Width="Auto" MinWidth="95"
+                                        Binding="{Binding Status, Converter={StaticResource EnumDescription}}"
+                                        SortMemberPath="Status" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent" />
+
+        <!-- ===== Oikea: valitun hakemuksen lomake ===== -->
+        <Border Grid.Column="2" BorderThickness="1" Padding="14,10"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+            <Grid>
+                <!-- Näkyy, kun mitään ei ole valittu -->
+                <TextBlock Text="Valitse hakemus listalta tai luo uusi." Foreground="Gray"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedApplication}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <DockPanel>
+                    <DockPanel.Style>
+                        <Style TargetType="DockPanel">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedApplication}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DockPanel.Style>
+
+                    <TextBlock DockPanel.Dock="Top" Text="Hakemuksen tiedot" Style="{StaticResource ViewTitle}" />
+
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" LastChildFill="False">
+                        <Button x:Name="DeleteButton" DockPanel.Dock="Left" Style="{StaticResource ActionButton}"
+                                Content="Poista" Command="{Binding DeleteCommand}" />
+                        <Button x:Name="SaveButton" DockPanel.Dock="Right" Style="{StaticResource ActionButton}"
+                                Content="Tallenna" ToolTip="Ctrl+S" FontWeight="SemiBold"
+                                Command="{Binding SaveCommand}" />
+                    </DockPanel>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                  Padding="0,0,4,0">
+                        <StackPanel>
+                            <!-- Yritys + pikalisäys -->
+                            <Label Content="Yritys" Target="{Binding ElementName=CompanyCombo}" />
+                            <DockPanel>
+                                <Button x:Name="AddCompanyButton" DockPanel.Dock="Right" Margin="6,0,0,0"
+                                        Padding="8,2" Content="+ Uusi yritys"
+                                        Command="{Binding StartAddCompanyCommand}" />
+                                <ComboBox x:Name="CompanyCombo"
+                                          ItemsSource="{Binding CompaniesView}" DisplayMemberPath="Name"
+                                          SelectedItem="{Binding SelectedApplication.Company}"
+                                          IsSynchronizedWithCurrentItem="False" />
+                            </DockPanel>
+                            <Border Margin="0,6,0,0" Padding="8" CornerRadius="3"
+                                    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                    Visibility="{Binding IsAddingCompany, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <Label Content="Uuden yrityksen nimi" Padding="0,0,0,2"
+                                           Target="{Binding ElementName=NewCompanyNameBox}" />
+                                    <TextBox x:Name="NewCompanyNameBox"
+                                             Text="{Binding NewCompanyName, UpdateSourceTrigger=PropertyChanged}">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding ConfirmAddCompanyCommand}" />
+                                            <KeyBinding Key="Escape" Command="{Binding CancelAddCompanyCommand}" />
+                                        </TextBox.InputBindings>
+                                    </TextBox>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                        <Button x:Name="ConfirmAddCompanyButton" Content="Lisää" Padding="10,2"
+                                                Command="{Binding ConfirmAddCompanyCommand}" />
+                                        <Button Content="Peru" Padding="10,2" Margin="6,0,0,0"
+                                                Command="{Binding CancelAddCompanyCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Label Content="Tehtävä" Target="{Binding ElementName=PositionBox}" />
+                            <TextBox x:Name="PositionBox"
+                                     Text="{Binding SelectedApplication.Position, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <Label Content="Hakupäivä" Target="{Binding ElementName=ApplicationDatePicker}" />
+                                    <DatePicker x:Name="ApplicationDatePicker"
+                                                SelectedDate="{Binding SelectedApplication.ApplicationDate}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Label Content="Tila" Target="{Binding ElementName=StatusCombo}" />
+                                    <ComboBox x:Name="StatusCombo"
+                                              ItemsSource="{Binding Statuses}"
+                                              SelectedItem="{Binding SelectedApplication.Status}"
+                                              IsSynchronizedWithCurrentItem="False">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource EnumDescription}}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <Label Content="Sijainti" Target="{Binding ElementName=LocationBox}" />
+                            <TextBox x:Name="LocationBox"
+                                     Text="{Binding SelectedApplication.Location, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Label Content="Ilmoituksen linkki" Target="{Binding ElementName=PostingUrlBox}" />
+                            <DockPanel>
+                                <Button x:Name="OpenPostingUrlButton" DockPanel.Dock="Right" Margin="6,0,0,0"
+                                        Padding="10,2" Content="Avaa" ToolTip="Avaa ilmoitus selaimessa"
+                                        Command="{Binding OpenPostingUrlCommand}" />
+                                <TextBox x:Name="PostingUrlBox"
+                                         Text="{Binding SelectedApplication.JobPostingUrl, UpdateSourceTrigger=PropertyChanged}" />
+                            </DockPanel>
+
+                            <TextBlock Text="Yhteyshenkilö" Style="{StaticResource SectionHeader}" />
+                            <Label Content="Nimi" Target="{Binding ElementName=ContactNameBox}" />
+                            <TextBox x:Name="ContactNameBox"
+                                     Text="{Binding SelectedApplication.ContactName, UpdateSourceTrigger=PropertyChanged}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <Label Content="Sähköposti" Target="{Binding ElementName=ContactEmailBox}" />
+                                    <TextBox x:Name="ContactEmailBox"
+                                             Text="{Binding SelectedApplication.ContactEmail, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Label Content="Puhelin" Target="{Binding ElementName=ContactPhoneBox}" />
+                                    <TextBox x:Name="ContactPhoneBox"
+                                             Text="{Binding SelectedApplication.ContactPhone, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Muistiinpanot" Style="{StaticResource SectionHeader}" />
+                            <TextBox x:Name="NotesBox" Margin="0,4,0,0" MinHeight="90"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                     AutomationProperties.Name="Muistiinpanot"
+                                     Text="{Binding SelectedApplication.Notes, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
