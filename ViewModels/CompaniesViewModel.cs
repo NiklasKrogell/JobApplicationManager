@@ -311,19 +311,7 @@ namespace JobApplicationManager.ViewModels
                 SelectedCompanyApplication = application;
         }
 
-        private bool TrySave()
-        {
-            try
-            {
-                _db.SaveChanges();
-                return true;
-            }
-            catch (DbUpdateException ex)
-            {
-                _dialogs.ShowError($"Tallennus epäonnistui:\n\n{ex.InnerException?.Message ?? ex.Message}");
-                return false;
-            }
-        }
+        private bool TrySave() => _db.TrySave(_dialogs);
 
         private static string DisplayName(string name) => string.IsNullOrWhiteSpace(name) ? "(nimetön)" : name;
     }

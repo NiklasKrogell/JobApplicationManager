@@ -16,8 +16,13 @@ namespace JobApplicationManager.ViewModels
         public const int CompaniesTab = 1;
         public const int StatisticsTab = 2;
 
+        private readonly AppDbContext _db;
+        private readonly IDialogService _dialogs;
+
         public MainViewModel(AppDbContext db, IDialogService dialogs)
         {
+            _db = db;
+            _dialogs = dialogs;
             Applications = new ApplicationsViewModel(db, dialogs);
             Companies = new CompaniesViewModel(db, dialogs);
             Companies.OpenApplicationRequested += OnOpenApplicationRequested;
@@ -62,6 +67,27 @@ namespace JobApplicationManager.ViewModels
                 case ApplicationsTab: Applications.NewApplicationCommand.Execute(null); break;
                 case CompaniesTab: Companies.NewCompanyCommand.Execute(null); break;
             }
+        }
+
+        /// <summary>
+        /// Kysytään ikkunaa suljettaessa: tallentamattomat muutokset tallennetaan, hylätään tai sulkeminen perutaan.
+        /// Palauttaa false, jos ikkuna pitää jättää auki.
+        /// </summary>
+        public bool ConfirmClose()
+        {
+            if (!_db.ChangeTracker.HasChanges())
+                return true;
+
+            var answer = _dialogs.AskYesNoCancel(
+                "Sinulla on tallentamattomia muutoksia.\n\nTallennetaanko ne ennen sulkemista?",
+                "Tallentamattomat muutokset");
+
+            return answer switch
+            {
+                true => _db.TrySave(_dialogs),   // epäonnistunut tallennus (esim. puuttuva tieto) jättää ikkunan auki
+                false => true,
+                null => false
+            };
         }
 
         private void OnOpenApplicationRequested(JobApplication application)

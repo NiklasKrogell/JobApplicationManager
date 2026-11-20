@@ -216,6 +216,66 @@ namespace JobApplicationManager.ViewModels
             TrySave();
         }
 
+        /// <summary>Vie listalla näkyvät hakemukset (haku ja tilasuodatin huomioiden) CSV-tiedostoon.</summary>
+        [RelayCommand]
+        private void ExportCsv()
+        {
+            var rows = ApplicationsView.Cast<JobApplication>().ToList();
+            if (rows.Count == 0)
+            {
+                _dialogs.ShowInfo("Listalla ei ole hakemuksia vietäväksi.", "Vie CSV");
+                return;
+            }
+
+            var path = _dialogs.AskSaveFilePath($"hakemukset-{DateTime.Today:yyyy-MM-dd}.csv",
+                "CSV-tiedosto (*.csv)|*.csv", "Vie hakemukset CSV-tiedostoon");
+            if (path is null)
+                return;
+
+            try
+            {
+                CsvExporter.Export(rows, path);
+                _dialogs.ShowInfo($"Vietiin {rows.Count} hakemusta tiedostoon:\n{path}", "Vie CSV");
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+            {
+                _dialogs.ShowError($"Tiedoston kirjoitus epäonnistui:\n\n{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Kopioi koko tietokannan (myös yritykset, toimialat ja tapahtumat) valittuun tiedostoon.
+        /// SQLiten VACUUM INTO tekee eheän kopion, vaikka kanta on auki.
+        /// </summary>
+        [RelayCommand]
+        private void BackupDatabase()
+        {
+            if (_db.ChangeTracker.HasChanges() &&
+                !_dialogs.Confirm("Varmuuskopioon tulee vain tallennettu data, ei tallentamattomia muutoksia.\n\nJatketaanko?",
+                    "Varmuuskopioi"))
+                return;
+
+            var path = _dialogs.AskSaveFilePath($"tyonhaku-varmuuskopio-{DateTime.Today:yyyy-MM-dd}.db",
+                "SQLite-tietokanta (*.db)|*.db", "Varmuuskopioi tietokanta");
+            if (path is null)
+                return;
+
+            try
+            {
+                // VACUUM INTO ei kirjoita olemassa olevan päälle; tallennusdialogi on jo kysynyt korvaamisesta.
+                if (System.IO.File.Exists(path))
+                    System.IO.File.Delete(path);
+                _db.Database.ExecuteSql($"VACUUM INTO {path}");
+                _dialogs.ShowInfo($"Varmuuskopio tallennettu:\n{path}\n\n" +
+                    "Palautus: sulje sovellus ja kopioi tiedosto nimellä job_applications.db kansioon\n" +
+                    System.IO.Path.GetDirectoryName(AppDbContext.DatabasePath), "Varmuuskopioi");
+            }
+            catch (Exception ex)
+            {
+                _dialogs.ShowError($"Varmuuskopiointi epäonnistui:\n\n{ex.Message}");
+            }
+        }
+
         [RelayCommand(CanExecute = nameof(CanOpenPostingUrl))]
         private void OpenPostingUrl()
         {
@@ -350,19 +410,7 @@ namespace JobApplicationManager.ViewModels
                 SelectedApplication = selected;
         }
 
-        private bool TrySave()
-        {
-            try
-            {
-                _db.SaveChanges();
-                return true;
-            }
-            catch (DbUpdateException ex)
-            {
-                _dialogs.ShowError($"Tallennus epäonnistui:\n\n{ex.InnerException?.Message ?? ex.Message}");
-                return false;
-            }
-        }
+        private bool TrySave() => _db.TrySave(_dialogs);
 
         private static string Describe(JobApplication application)
         {

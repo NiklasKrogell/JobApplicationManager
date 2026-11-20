@@ -106,7 +106,7 @@
                     <TextBlock DockPanel.Dock="Top" Text="Yrityksen tiedot" Style="{StaticResource ViewTitle}" />
 
                     <StackPanel DockPanel.Dock="Top">
-                        <Label Content="Nimi" Target="{Binding ElementName=CompanyNameBox}" />
+                        <Label Content="Nimi *" Target="{Binding ElementName=CompanyNameBox}" ToolTip="Pakollinen" />
                         <TextBox x:Name="CompanyNameBox"
                                  Text="{Binding SelectedCompany.Name, UpdateSourceTrigger=PropertyChanged}" />
 

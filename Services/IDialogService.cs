@@ -7,6 +7,15 @@ namespace JobApplicationManager.Services
     public interface IDialogService
     {
         bool Confirm(string message, string title = "Vahvista");
+
+        /// <summary>Kyllä = true, Ei = false, Peruuta = null.</summary>
+        bool? AskYesNoCancel(string message, string title);
+
         void ShowError(string message, string title = "Virhe");
+
+        void ShowInfo(string message, string title);
+
+        /// <summary>Tallennusdialogi; palauttaa valitun polun tai null, jos käyttäjä peruu.</summary>
+        string? AskSaveFilePath(string defaultFileName, string filter, string title);
     }
 }

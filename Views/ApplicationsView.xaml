@@ -38,8 +38,16 @@
                           AutomationProperties.Name="Tilasuodatin" />
             </Grid>
 
-            <TextBlock x:Name="CountText" DockPanel.Dock="Bottom" Margin="0,6,0,0" Foreground="Gray"
-                       Text="{Binding ApplicationsView.Count, StringFormat='Hakemuksia: {0}'}" />
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                <Button x:Name="BackupButton" DockPanel.Dock="Right" Margin="6,0,0,0" Padding="8,1"
+                        Content="Varmuuskopioi…" ToolTip="Kopioi koko tietokannan valitsemaasi tiedostoon"
+                        Command="{Binding BackupDatabaseCommand}" />
+                <Button x:Name="ExportCsvButton" DockPanel.Dock="Right" Padding="8,1"
+                        Content="Vie CSV…" ToolTip="Vie listalla näkyvät hakemukset Exceliin sopivaan CSV-tiedostoon"
+                        Command="{Binding ExportCsvCommand}" />
+                <TextBlock x:Name="CountText" Foreground="Gray" VerticalAlignment="Center"
+                           Text="{Binding ApplicationsView.Count, StringFormat='Hakemuksia: {0}'}" />
+            </DockPanel>
 
             <DataGrid x:Name="ApplicationsGrid"
                       ItemsSource="{Binding ApplicationsView}"
@@ -112,7 +120,7 @@
                                   Padding="0,0,4,0">
                         <StackPanel>
                             <!-- Yritys + pikalisäys -->
-                            <Label Content="Yritys" Target="{Binding ElementName=CompanyCombo}" />
+                            <Label Content="Yritys *" Target="{Binding ElementName=CompanyCombo}" ToolTip="Pakollinen" />
                             <DockPanel>
                                 <Button x:Name="AddCompanyButton" DockPanel.Dock="Right" Margin="6,0,0,0"
                                         Padding="8,2" Content="+ Uusi yritys"
@@ -144,7 +152,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <Label Content="Tehtävä" Target="{Binding ElementName=PositionBox}" />
+                            <Label Content="Tehtävä *" Target="{Binding ElementName=PositionBox}" ToolTip="Pakollinen" />
                             <TextBox x:Name="PositionBox"
                                      Text="{Binding SelectedApplication.Position, UpdateSourceTrigger=PropertyChanged}" />
 

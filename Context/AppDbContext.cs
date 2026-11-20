@@ -68,14 +68,90 @@ namespace JobApplicationManager.Context
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
+            ThrowIfInvalid();
             AddAutomaticActivities();
             return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
+            ThrowIfInvalid();
             AddAutomaticActivities();
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        private void ThrowIfInvalid()
+        {
+            var errors = GetValidationErrors();
+            if (errors.Count > 0)
+                throw new SaveValidationException(errors);
+        }
+
+        /// <summary>
+        /// Tarkistaa lisätyt ja muutetut rivit ennen tallennusta: hakemuksella pitää olla tehtävä ja yritys,
+        /// yrityksellä ja toimialalla nimi. Kaikki tallennukset kulkevat tätä kautta välilehdestä riippumatta.
+        /// </summary>
+        public IReadOnlyList<string> GetValidationErrors()
+        {
+            ChangeTracker.DetectChanges();
+            var errors = new List<string>();
+
+            foreach (var entry in ChangeTracker.Entries<JobApplication>())
+            {
+                if (entry.State is not (EntityState.Added or EntityState.Modified))
+                    continue;
+
+                var application = entry.Entity;
+                var name = DescribeApplication(application, entry.State == EntityState.Added);
+
+                if (string.IsNullOrWhiteSpace(application.Position))
+                    errors.Add($"Hakemukselta {name} puuttuu tehtävä.");
+
+                if (application.CompanyId is null && application.Company is null && MustHaveCompany(entry))
+                    errors.Add($"Hakemukselta {name} puuttuu yritys.");
+            }
+
+            foreach (var entry in ChangeTracker.Entries<Company>())
+            {
+                if (entry.State is (EntityState.Added or EntityState.Modified) && string.IsNullOrWhiteSpace(entry.Entity.Name))
+                    errors.Add("Yritykseltä puuttuu nimi.");
+            }
+
+            foreach (var entry in ChangeTracker.Entries<Industry>())
+            {
+                if (entry.State is (EntityState.Added or EntityState.Modified) && string.IsNullOrWhiteSpace(entry.Entity.Name))
+                    errors.Add("Toimialalta puuttuu nimi.");
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Uudella hakemuksella yritys on pakollinen, samoin jos käyttäjä on tyhjentänyt sen. Poikkeus: yritys
+        /// poistetaan samassa tallennuksessa (Yritykset-välilehden poisto jättää hakemukset tarkoituksella ilman
+        /// yritystä), ja jo aiemmin ilman yritystä jääneitä hakemuksia saa muokata.
+        /// </summary>
+        private bool MustHaveCompany(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<JobApplication> entry)
+        {
+            if (entry.State == EntityState.Added)
+                return true;
+
+            var companyId = entry.Property(a => a.CompanyId);
+            if (!companyId.IsModified || companyId.OriginalValue is not { } originalId)
+                return false;
+
+            var companyBeingDeleted = ChangeTracker.Entries<Company>()
+                .Any(c => c.State == EntityState.Deleted && c.Entity.Id == originalId);
+            return !companyBeingDeleted;
+        }
+
+        private static string DescribeApplication(JobApplication application, bool isNew)
+        {
+            var parts = new[] { application.Position, application.Company?.Name }
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s!.Trim());
+            var text = string.Join(" – ", parts);
+            return text.Length > 0 ? $"\"{text}\"" : isNew ? "(uusi, tyhjä hakemus)" : "(nimetön hakemus)";
         }
 
         /// <summary>
