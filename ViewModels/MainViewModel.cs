@@ -21,11 +21,14 @@ namespace JobApplicationManager.ViewModels
             Applications = new ApplicationsViewModel(db, dialogs);
             Companies = new CompaniesViewModel(db, dialogs);
             Companies.OpenApplicationRequested += OnOpenApplicationRequested;
+            Statistics = new StatisticsViewModel(db);
         }
 
         public ApplicationsViewModel Applications { get; }
 
         public CompaniesViewModel Companies { get; }
+
+        public StatisticsViewModel Statistics { get; }
 
         [ObservableProperty]
         private int selectedTabIndex = ApplicationsTab;
@@ -36,6 +39,7 @@ namespace JobApplicationManager.ViewModels
             {
                 case ApplicationsTab: Applications.Activate(); break;
                 case CompaniesTab: Companies.Activate(); break;
+                case StatisticsTab: Statistics.Refresh(); break;
             }
         }
 

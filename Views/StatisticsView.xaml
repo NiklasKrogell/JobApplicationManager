@@ -1,0 +1,145 @@
+<UserControl x:Class="JobApplicationManager.Views.StatisticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:JobApplicationManager.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:StatisticsViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="640" d:DesignWidth="1150">
+    <UserControl.Resources>
+        <!-- KPI-kortti -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" />
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="DimGray" />
+        </Style>
+        <Style x:Key="CardValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+        <Style x:Key="CardDetail" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <!-- Vaakapalkki: nimi | palkki (tähtileveydet) | määrä -->
+        <DataTemplate x:Key="BarTemplate">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="36" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                           ToolTip="{Binding Label}" />
+                <Grid Grid.Column="1" Height="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding Filled}" />
+                        <ColumnDefinition Width="{Binding Empty}" />
+                    </Grid.ColumnDefinitions>
+                    <Rectangle Fill="SteelBlue" RadiusX="2" RadiusY="2" />
+                </Grid>
+                <TextBlock Grid.Column="2" Text="{Binding Count}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+        </DataTemplate>
+
+        <Style x:Key="ChartPanel" TargetType="Border">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="8">
+            <!-- KPI-kortit -->
+            <UniformGrid Rows="1" Columns="4" Margin="0,0,-10,12">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Hakemuksia yhteensä" Style="{StaticResource CardTitle}" />
+                        <TextBlock x:Name="TotalText" Text="{Binding Total}" Style="{StaticResource CardValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Käynnissä" Style="{StaticResource CardTitle}" />
+                        <TextBlock x:Name="ActiveText" Text="{Binding Active}" Style="{StaticResource CardValue}" />
+                        <TextBlock Text="Haettu, haastattelu tai tarjous" Style="{StaticResource CardDetail}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}"
+                        ToolTip="Hakemukset, joihin työnantaja on vastannut: tila on tai on ollut Haastattelu, Tarjous, Hyväksytty tai Hylätty.">
+                    <StackPanel>
+                        <TextBlock Text="Vastausprosentti" Style="{StaticResource CardTitle}" />
+                        <TextBlock x:Name="ResponseRateText" Text="{Binding ResponseRateText}" Style="{StaticResource CardValue}" />
+                        <TextBlock Text="{Binding ResponseDetail}" Style="{StaticResource CardDetail}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}"
+                        ToolTip="Hakemukset, joiden tila on joskus ollut Haastattelu tai joiden lokissa on Haastattelu-tapahtuma.">
+                    <StackPanel>
+                        <TextBlock Text="Edennyt haastatteluun" Style="{StaticResource CardTitle}" />
+                        <TextBlock x:Name="InterviewRateText" Text="{Binding InterviewRateText}" Style="{StaticResource CardValue}" />
+                        <TextBlock Text="{Binding InterviewDetail}" Style="{StaticResource CardDetail}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <TextBlock Margin="0,0,0,12" Foreground="Gray" Text="Ei vielä hakemuksia. Tilastot täyttyvät, kun lisäät hakemuksia.">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Total}" Value="0">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Kaaviot -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <Border Style="{StaticResource ChartPanel}">
+                        <StackPanel>
+                            <TextBlock Text="Tilan mukaan" Style="{StaticResource ViewTitle}" Margin="0,0,0,6" />
+                            <ItemsControl x:Name="ByStatusList" ItemsSource="{Binding ByStatus}"
+                                          ItemTemplate="{StaticResource BarTemplate}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource ChartPanel}">
+                        <StackPanel>
+                            <TextBlock Text="Toimialoittain" Style="{StaticResource ViewTitle}" Margin="0,0,0,6" />
+                            <ItemsControl x:Name="ByIndustryList" ItemsSource="{Binding ByIndustry}"
+                                          ItemTemplate="{StaticResource BarTemplate}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Column="2" Style="{StaticResource ChartPanel}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Hakemuksia kuukausittain (12 kk)" Style="{StaticResource ViewTitle}" Margin="0,0,0,6" />
+                        <ItemsControl x:Name="ByMonthList" ItemsSource="{Binding ByMonth}"
+                                      ItemTemplate="{StaticResource BarTemplate}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -23,9 +23,8 @@
         <TabItem x:Name="CompaniesTab" Header="Yritykset">
             <views:CompaniesView DataContext="{Binding Companies}" />
         </TabItem>
-        <TabItem Header="Tilastot">
-            <TextBlock Margin="16" Foreground="Gray"
-                       Text="Tulossa: yhteenveto hakemuksista, vastausprosentti ja eteneminen haastatteluihin." />
+        <TabItem x:Name="StatisticsTab" Header="Tilastot">
+            <views:StatisticsView DataContext="{Binding Statistics}" />
         </TabItem>
     </TabControl>
 </Window>
