@@ -21,6 +21,36 @@ namespace JobApplicationManager.Migrations
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
 
+            modelBuilder.Entity("JobApplicationManager.Model.Activity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("JobApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NewStatus")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobApplicationId");
+
+                    b.ToTable("Activities");
+                });
+
             modelBuilder.Entity("JobApplicationManager.Model.Company", b =>
                 {
                     b.Property<int>("Id")
@@ -77,20 +107,38 @@ namespace JobApplicationManager.Migrations
                     b.Property<string>("ContactPhone")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("JobPostingUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Position")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
                     b.ToTable("JobApplications");
+                });
+
+            modelBuilder.Entity("JobApplicationManager.Model.Activity", b =>
+                {
+                    b.HasOne("JobApplicationManager.Model.JobApplication", "JobApplication")
+                        .WithMany("Activities")
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobApplication");
                 });
 
             modelBuilder.Entity("JobApplicationManager.Model.Company", b =>
@@ -119,6 +167,11 @@ namespace JobApplicationManager.Migrations
             modelBuilder.Entity("JobApplicationManager.Model.Industry", b =>
                 {
                     b.Navigation("Companies");
+                });
+
+            modelBuilder.Entity("JobApplicationManager.Model.JobApplication", b =>
+                {
+                    b.Navigation("Activities");
                 });
 #pragma warning restore 612, 618
         }
