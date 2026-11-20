@@ -214,6 +214,116 @@
                                      AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                                      AutomationProperties.Name="Muistiinpanot"
                                      Text="{Binding SelectedApplication.Notes, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <!-- ===== Tapahtumaloki ===== -->
+                            <TextBlock Text="Tapahtumat" Style="{StaticResource SectionHeader}" />
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="140" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="ActivityTypeCombo" Grid.Column="0"
+                                          ItemsSource="{Binding ActivityTypes}"
+                                          SelectedItem="{Binding NewActivityType}"
+                                          IsSynchronizedWithCurrentItem="False"
+                                          AutomationProperties.Name="Tapahtuman tyyppi">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource EnumDescription}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <DatePicker x:Name="ActivityDatePicker" Grid.Column="2"
+                                            SelectedDate="{Binding NewActivityDate}"
+                                            AutomationProperties.Name="Tapahtuman päivä" />
+                            </Grid>
+                            <DockPanel Margin="0,6,0,0">
+                                <Button x:Name="AddActivityButton" DockPanel.Dock="Right" Margin="6,0,0,0"
+                                        Padding="10,2" Content="Lisää" ToolTip="Lisää tapahtuma ja tallenna (Enter)"
+                                        Command="{Binding AddActivityCommand}" />
+                                <TextBox x:Name="ActivityDescriptionBox"
+                                         AutomationProperties.Name="Tapahtuman kuvaus"
+                                         ToolTip="Esim. &quot;Soitin rekrytoijalle, haastattelu sovittu&quot;"
+                                         Text="{Binding NewActivityDescription, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddActivityCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </DockPanel>
+                            <TextBlock Margin="0,4,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
+                                       Text="Tilamuutokset kirjautuvat automaattisesti, kun hakemus tallennetaan." />
+
+                            <TextBlock x:Name="NoActivitiesText" Margin="0,10,0,0" Foreground="Gray"
+                                       Text="Ei tapahtumia. Uuden hakemuksen luonti kirjautuu ensimmäisessä tallennuksessa.">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Setter Property="TextWrapping" Value="Wrap" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ActivitiesView.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- ListBox ilman omaa ScrollVieweria: hiiren rulla vierittää koko lomaketta,
+                                 ja rivit näkyvät silti oikein ruudunlukijoille. Rivejä ei valita. -->
+                            <ListBox x:Name="ActivitiesList" Margin="0,8,0,0" ItemsSource="{Binding ActivitiesView}"
+                                     AutomationProperties.Name="Tapahtumat" Focusable="False">
+                                <ListBox.Template>
+                                    <ControlTemplate TargetType="ListBox">
+                                        <ItemsPresenter />
+                                    </ControlTemplate>
+                                </ListBox.Template>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Focusable" Value="False" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderThickness="0,0,0,1" BorderBrush="#E3E3E3" Padding="0,6">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="6,0,0,0"
+                                                        Padding="6,0" Content="✕" ToolTip="Poista tapahtuma"
+                                                        AutomationProperties.Name="Poista tapahtuma"
+                                                        Command="{Binding DataContext.DeleteActivityCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <StackPanel>
+                                                    <TextBlock FontSize="11" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="DimGray" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Type}" Value="StatusChange">
+                                                                        <Setter Property="Foreground" Value="SteelBlue" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Type}" Value="Interview">
+                                                                        <Setter Property="Foreground" Value="SeaGreen" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                        <Run Text="{Binding Date, StringFormat=d, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Type, Converter={StaticResource EnumDescription}, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>

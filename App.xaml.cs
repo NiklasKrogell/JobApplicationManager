@@ -21,9 +21,12 @@ namespace JobApplicationManager
             base.OnStartup(e);
 
             // Päivämäärät ym. suomalaisessa muodossa kaikissa bindingeissä (esim. 20.11.2026).
+            // Myös FrameworkContentElement (esim. TextBlockin <Run>), muuten niissä näkyy en-US-muoto.
+            var finnish = XmlLanguage.GetLanguage("fi-FI");
             FrameworkElement.LanguageProperty.OverrideMetadata(
-                typeof(FrameworkElement),
-                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage("fi-FI")));
+                typeof(FrameworkElement), new FrameworkPropertyMetadata(finnish));
+            FrameworkContentElement.LanguageProperty.OverrideMetadata(
+                typeof(System.Windows.Documents.TextElement), new FrameworkPropertyMetadata(finnish));
 
             DispatcherUnhandledException += OnDispatcherUnhandledException;
 

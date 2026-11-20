@@ -28,7 +28,8 @@ namespace JobApplicationManager.ViewModels
 
             // Yritykset ensin, jotta hakemusten Company-viittaukset täyttyvät suoraan muistissa olevista olioista.
             _db.Companies.Load();
-            _db.JobApplications.Load();
+            // Tapahtumat samalla kyselyllä: valitun hakemuksen loki näkyy heti ilman erillistä latausta.
+            _db.JobApplications.Include(a => a.Activities).Load();
 
             Applications = _db.JobApplications.Local.ToObservableCollection();
             ApplicationsView = new ListCollectionView(Applications) { Filter = FilterApplication };
@@ -74,6 +75,26 @@ namespace JobApplicationManager.ViewModels
         [ObservableProperty]
         private bool isAddingCompany;
 
+        // ---------- Tapahtumaloki ----------
+
+        /// <summary>Itse lisättävät tyypit; tilamuutokset kirjautuvat automaattisesti tallennettaessa.</summary>
+        public IReadOnlyList<ActivityType> ActivityTypes { get; } =
+            Enum.GetValues<ActivityType>().Where(t => t != ActivityType.StatusChange).ToList();
+
+        /// <summary>Valitun hakemuksen tapahtumat uusin ensin.</summary>
+        [ObservableProperty]
+        private ListCollectionView? activitiesView;
+
+        [ObservableProperty]
+        private ActivityType newActivityType = ActivityType.Note;
+
+        [ObservableProperty]
+        private DateTime? newActivityDate = DateTime.Today;
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(AddActivityCommand))]
+        private string newActivityDescription = string.Empty;
+
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(ConfirmAddCompanyCommand))]
         private string newCompanyName = string.Empty;
@@ -90,6 +111,22 @@ namespace JobApplicationManager.ViewModels
                 newValue.PropertyChanged += OnSelectedApplicationPropertyChanged;
 
             IsAddingCompany = false;
+
+            ActivitiesView = newValue is null ? null : CreateActivitiesView(newValue);
+            NewActivityDate = DateTime.Today;
+            NewActivityDescription = string.Empty;
+            AddActivityCommand.NotifyCanExecuteChanged();
+        }
+
+        private static ListCollectionView CreateActivitiesView(JobApplication application)
+        {
+            // Kokoelma on entiteetissä ObservableCollection, joten myös automaattiset tilamuutosrivit
+            // ilmestyvät listaan heti tallennuksen jälkeen.
+            var source = application.Activities as System.Collections.IList ?? application.Activities.ToList();
+            var view = new ListCollectionView(source);
+            view.SortDescriptions.Add(new SortDescription(nameof(Activity.Date), ListSortDirection.Descending));
+            view.SortDescriptions.Add(new SortDescription(nameof(Activity.Id), ListSortDirection.Descending));
+            return view;
         }
 
         private void OnSelectedApplicationPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -228,11 +265,59 @@ namespace JobApplicationManager.ViewModels
         [RelayCommand]
         private void CancelAddCompany() => IsAddingCompany = false;
 
+        /// <summary>Lisää tapahtuman ja tallentaa heti (samalla tallentuvat lomakkeen muutokset).</summary>
+        [RelayCommand(CanExecute = nameof(CanAddActivity))]
+        private void AddActivity()
+        {
+            if (SelectedApplication is not { } application)
+                return;
+
+            // Uusi hakemus tallennetaan ensin, jotta "Hakemus luotu" -rivi kirjautuu ennen tätä tapahtumaa.
+            if (_db.Entry(application).State == EntityState.Added && !TrySave())
+                return;
+
+            // Päivä valitaan kalenterista; kellonaika pitää saman päivän tapahtumat lisäysjärjestyksessä.
+            var day = (NewActivityDate ?? DateTime.Today).Date;
+            var activity = new Activity
+            {
+                JobApplication = application,
+                Date = day + DateTime.Now.TimeOfDay,
+                Type = NewActivityType,
+                Description = NewActivityDescription.Trim()
+            };
+            _db.Activities.Add(activity);
+
+            if (TrySave())
+            {
+                NewActivityDescription = string.Empty;
+                RefreshViews();
+            }
+        }
+
+        [RelayCommand]
+        private void DeleteActivity(Activity? activity)
+        {
+            if (activity is null)
+                return;
+
+            var confirmed = _dialogs.Confirm(
+                $"Poistetaanko tapahtuma \"{activity.Description}\" ({activity.Date:d})?",
+                "Poista tapahtuma");
+            if (!confirmed)
+                return;
+
+            _db.Activities.Remove(activity);
+            TrySave();
+        }
+
         // ---------- Apurit ----------
 
         private bool HasSelectedApplication() => SelectedApplication is not null;
 
         private bool CanConfirmAddCompany() => !string.IsNullOrWhiteSpace(NewCompanyName);
+
+        private bool CanAddActivity()
+            => SelectedApplication is not null && !string.IsNullOrWhiteSpace(NewActivityDescription);
 
         private bool CanOpenPostingUrl() => TryGetPostingUri(out _);
 
@@ -260,6 +345,7 @@ namespace JobApplicationManager.ViewModels
             var selected = SelectedApplication;
             ApplicationsView.Refresh();
             CompaniesView.Refresh();
+            ActivitiesView?.Refresh();
             if (selected is not null && ApplicationsView.Contains(selected))
                 SelectedApplication = selected;
         }
