@@ -8,7 +8,7 @@ namespace JobApplicationManager.Model
     public class Company
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public int? IndustryId { get; set; }
         public virtual Industry? Industry { get; set; }
         public virtual ICollection<JobApplication> JobApplications { get; set; } = new ObservableCollection<JobApplication>();
