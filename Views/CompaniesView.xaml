@@ -1,0 +1,216 @@
+<UserControl x:Class="JobApplicationManager.Views.CompaniesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:JobApplicationManager.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:CompaniesViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="640" d:DesignWidth="1150">
+    <UserControl.Resources>
+        <Style x:Key="Panel" TargetType="Border">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" />
+        </Style>
+        <Style x:Key="ListGrid" TargetType="DataGrid">
+            <Setter Property="IsSynchronizedWithCurrentItem" Value="False" />
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="SelectionUnit" Value="FullRow" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="#E3E3E3" />
+            <Setter Property="AlternatingRowBackground" Value="#F6F8FA" />
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
+            <Setter Property="RowHeight" Value="26" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="260" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="360" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="220" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Vasen: yrityslista ===== -->
+        <DockPanel Grid.Column="0">
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="NewCompanyButton" Style="{StaticResource ActionButton}"
+                        Content="+ Uusi yritys" ToolTip="Ctrl+N"
+                        Command="{Binding NewCompanyCommand}" />
+                <Label Grid.Column="1" Content="Haku:" Padding="12,0,6,0" VerticalAlignment="Center"
+                       Target="{Binding ElementName=CompanySearchBox}" />
+                <TextBox x:Name="CompanySearchBox" Grid.Column="2" VerticalContentAlignment="Center"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Hakee yrityksen nimestä ja toimialasta" />
+            </Grid>
+
+            <TextBlock x:Name="CompanyCountText" DockPanel.Dock="Bottom" Margin="0,6,0,0" Foreground="Gray"
+                       Text="{Binding CompaniesView.Count, StringFormat='Yrityksiä: {0}'}" />
+
+            <DataGrid x:Name="CompaniesGrid" Style="{StaticResource ListGrid}"
+                      ItemsSource="{Binding CompaniesView}"
+                      SelectedItem="{Binding SelectedCompany}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Yritys" Width="1.4*" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Toimiala" Width="*" Binding="{Binding Industry.Name}"
+                                        SortMemberPath="Industry.Name" />
+                    <DataGridTextColumn Header="Hakemuksia" Width="Auto" MinWidth="80"
+                                        Binding="{Binding JobApplications.Count}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent" />
+
+        <!-- ===== Keski: valitun yrityksen tiedot ja hakemukset ===== -->
+        <Border Grid.Column="2" Style="{StaticResource Panel}">
+            <Grid>
+                <TextBlock Text="Valitse yritys listalta tai luo uusi." Foreground="Gray"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedCompany}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <DockPanel>
+                    <DockPanel.Style>
+                        <Style TargetType="DockPanel">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedCompany}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DockPanel.Style>
+
+                    <TextBlock DockPanel.Dock="Top" Text="Yrityksen tiedot" Style="{StaticResource ViewTitle}" />
+
+                    <StackPanel DockPanel.Dock="Top">
+                        <Label Content="Nimi" Target="{Binding ElementName=CompanyNameBox}" />
+                        <TextBox x:Name="CompanyNameBox"
+                                 Text="{Binding SelectedCompany.Name, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <Label Content="Toimiala" Target="{Binding ElementName=IndustryCombo}" />
+                        <DockPanel>
+                            <Button x:Name="ClearIndustryButton" DockPanel.Dock="Right" Margin="6,0,0,0"
+                                    Padding="8,2" Content="Tyhjennä" ToolTip="Poista toimiala yritykseltä"
+                                    Command="{Binding ClearIndustryCommand}" />
+                            <ComboBox x:Name="IndustryCombo"
+                                      ItemsSource="{Binding IndustriesView}" DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedCompany.Industry}"
+                                      IsSynchronizedWithCurrentItem="False"
+                                      ToolTip="Uusia toimialoja voi lisätä oikean reunan Toimialat-listaan" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" LastChildFill="False">
+                        <Button x:Name="DeleteCompanyButton" DockPanel.Dock="Left" Style="{StaticResource ActionButton}"
+                                Content="Poista" Command="{Binding DeleteCompanyCommand}" />
+                        <Button x:Name="SaveCompanyButton" DockPanel.Dock="Right" Style="{StaticResource ActionButton}"
+                                Content="Tallenna" ToolTip="Ctrl+S" FontWeight="SemiBold"
+                                Command="{Binding SaveCommand}" />
+                    </DockPanel>
+
+                    <DockPanel DockPanel.Dock="Top" Margin="0,16,0,4" LastChildFill="False">
+                        <TextBlock x:Name="CompanyApplicationsTitle" DockPanel.Dock="Left" VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding SelectedCompany.JobApplications.Count, StringFormat='Hakemukset ({0})'}" />
+                        <Button x:Name="OpenApplicationButton" DockPanel.Dock="Right" Padding="8,2"
+                                Content="Näytä hakemus" ToolTip="Avaa hakemus Hakemukset-välilehdellä (tai tuplaklikkaa riviä)"
+                                Command="{Binding OpenApplicationCommand}" />
+                    </DockPanel>
+
+                    <DataGrid x:Name="CompanyApplicationsGrid" Style="{StaticResource ListGrid}"
+                              ItemsSource="{Binding SelectedCompanyApplications}"
+                              SelectedItem="{Binding SelectedCompanyApplication}"
+                              MouseDoubleClick="CompanyApplicationsGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tehtävä" Width="*" Binding="{Binding Position}" />
+                            <DataGridTextColumn Header="Haettu" Width="Auto" MinWidth="80"
+                                                Binding="{Binding ApplicationDate, StringFormat=d}" />
+                            <DataGridTextColumn Header="Tila" Width="Auto" MinWidth="90"
+                                                Binding="{Binding Status, Converter={StaticResource EnumDescription}}"
+                                                SortMemberPath="Status" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Oikea: toimialat ===== -->
+        <Border Grid.Column="4" Style="{StaticResource Panel}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Toimialat" Style="{StaticResource ViewTitle}" Margin="0,0,0,8" />
+
+                <StackPanel DockPanel.Dock="Bottom">
+                    <StackPanel IsEnabled="{Binding SelectedIndustry, Converter={StaticResource NotNullToBool}}">
+                        <Label Content="Valitun toimialan nimi" Target="{Binding ElementName=RenameIndustryBox}" />
+                        <TextBox x:Name="RenameIndustryBox"
+                                 Text="{Binding RenameIndustryName, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding RenameIndustryCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <DockPanel Margin="0,6,0,0" LastChildFill="False">
+                            <Button x:Name="RenameIndustryButton" DockPanel.Dock="Left" Padding="8,2"
+                                    Content="Nimeä uudelleen" Command="{Binding RenameIndustryCommand}" />
+                            <Button x:Name="DeleteIndustryButton" DockPanel.Dock="Right" Padding="8,2"
+                                    Content="Poista" Command="{Binding DeleteIndustryCommand}" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <Label Content="Uusi toimiala" Margin="0,8,0,0" Target="{Binding ElementName=NewIndustryBox}" />
+                    <DockPanel>
+                        <Button x:Name="AddIndustryButton" DockPanel.Dock="Right" Margin="6,0,0,0" Padding="10,2"
+                                Content="Lisää" Command="{Binding AddIndustryCommand}" />
+                        <TextBox x:Name="NewIndustryBox"
+                                 Text="{Binding NewIndustryName, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding AddIndustryCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+                    <TextBlock Margin="0,8,0,0" Foreground="Gray" FontSize="11" TextWrapping="Wrap"
+                               Text="Toimialojen muutokset tallentuvat heti." />
+                </StackPanel>
+
+                <ListBox x:Name="IndustriesList"
+                         ItemsSource="{Binding IndustriesView}"
+                         SelectedItem="{Binding SelectedIndustry}"
+                         IsSynchronizedWithCurrentItem="False"
+                         HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,2">
+                                <TextBlock DockPanel.Dock="Right" Margin="8,0,0,0" Foreground="Gray"
+                                           Text="{Binding Companies.Count}"
+                                           ToolTip="Yrityksiä tällä toimialalla" />
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

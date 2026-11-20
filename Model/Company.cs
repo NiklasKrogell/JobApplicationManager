@@ -26,7 +26,6 @@ namespace JobApplicationManager.Model
 
         public virtual ICollection<JobApplication> JobApplications { get; set; } = new ObservableCollection<JobApplication>();
 
-        // Näkyy mm. ruudunlukijoille ja debuggerissa proxy-luokan nimen sijaan.
         public override string ToString() => Name;
     }
 }

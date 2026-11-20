@@ -140,14 +140,25 @@ namespace JobApplicationManager.ViewModels
         [RelayCommand]
         private void Save()
         {
-            if (!TrySave())
-                return;
+            if (TrySave())
+                RefreshViews();
+        }
 
-            // Lajittelu ja suodatus eivät päivity elävästi muokatessa, joten päivitetään tallennuksen jälkeen.
-            var selected = SelectedApplication;
-            ApplicationsView.Refresh();
-            if (selected is not null && ApplicationsView.Contains(selected))
-                SelectedApplication = selected;
+        /// <summary>
+        /// Kutsutaan, kun välilehti avataan: Yritykset-välilehdellä on voitu nimetä tai poistaa yrityksiä,
+        /// joten lista ja yritysvalinta lajitellaan uudelleen.
+        /// </summary>
+        public void Activate() => RefreshViews();
+
+        /// <summary>Valitsee hakemuksen (esim. Yritykset-välilehdeltä); tyhjentää suodattimet, jos se on piilossa.</summary>
+        public void ShowApplication(JobApplication application)
+        {
+            if (!FilterApplication(application))
+            {
+                SearchText = string.Empty;
+                SelectedStatusFilter = StatusFilterOptions[0];
+            }
+            SelectedApplication = application;
         }
 
         [RelayCommand(CanExecute = nameof(HasSelectedApplication))]
@@ -241,6 +252,16 @@ namespace JobApplicationManager.ViewModels
 
             return Uri.TryCreate(text, UriKind.Absolute, out uri)
                 && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
+
+        /// <summary>Lajittelu ja suodatus eivät päivity elävästi muokatessa, joten päivitetään valinta säilyttäen.</summary>
+        private void RefreshViews()
+        {
+            var selected = SelectedApplication;
+            ApplicationsView.Refresh();
+            CompaniesView.Refresh();
+            if (selected is not null && ApplicationsView.Contains(selected))
+                SelectedApplication = selected;
         }
 
         private bool TrySave()

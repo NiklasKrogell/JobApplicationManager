@@ -6,6 +6,7 @@
     <Application.Resources>
         <conv:EnumDescriptionConverter x:Key="EnumDescription" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:NotNullToBooleanConverter x:Key="NotNullToBool" />
 
         <!-- Lomakkeiden kenttäotsikot -->
         <Style TargetType="Label">

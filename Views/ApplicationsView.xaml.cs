@@ -9,6 +9,7 @@ namespace JobApplicationManager.Views
         public ApplicationsView()
         {
             InitializeComponent();
+            DataGridSelection.KeepSelectedInView(ApplicationsGrid);
 
             // Pelkkää näkymälogiikkaa: kun "Uusi yritys" -kenttä tulee näkyviin, kohdistetaan siihen.
             NewCompanyNameBox.IsVisibleChanged += (_, e) =>

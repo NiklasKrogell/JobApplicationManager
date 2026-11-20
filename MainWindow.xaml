@@ -12,17 +12,16 @@
         WindowStartupLocation="CenterScreen"
         FontSize="13">
     <Window.InputBindings>
-        <KeyBinding Key="S" Modifiers="Control" Command="{Binding Applications.SaveCommand}" />
-        <KeyBinding Key="N" Modifiers="Control" Command="{Binding Applications.NewApplicationCommand}" />
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewCommand}" />
     </Window.InputBindings>
 
-    <TabControl Margin="8">
-        <TabItem Header="Hakemukset">
+    <TabControl x:Name="MainTabs" Margin="8" SelectedIndex="{Binding SelectedTabIndex}">
+        <TabItem x:Name="ApplicationsTab" Header="Hakemukset">
             <views:ApplicationsView DataContext="{Binding Applications}" />
         </TabItem>
-        <TabItem Header="Yritykset">
-            <TextBlock Margin="16" Foreground="Gray"
-                       Text="Tulossa: yritysten ja toimialojen hallinta." />
+        <TabItem x:Name="CompaniesTab" Header="Yritykset">
+            <views:CompaniesView DataContext="{Binding Companies}" />
         </TabItem>
         <TabItem Header="Tilastot">
             <TextBlock Margin="16" Foreground="Gray"
