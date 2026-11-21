@@ -22,6 +22,9 @@ I also was curious about the amounts of my applications, so this project is a wa
 - Search across position, company, location, contact person and notes, plus a status filter.
 - A form for the selected application: company, position, applied date, status, location, posting
   link (opens in the browser, http/https only), contact name, email and phone, and notes.
+- **Statuses:** Uusi (posting saved, not applied yet), Haettu, Haastattelu, Tarjous, Hyväksytty,
+  Hylätty and Vetäydyin. A new application starts as Uusi, so you can save an interesting posting
+  first and apply later.
 - Add a company inline ("+ Uusi yritys"). An existing company with the same name is reused
   instead of creating a duplicate.
 - **Job posting keywords (Työpaikkailmoitus)**: paste the posting text into the application and
@@ -45,8 +48,12 @@ I also was curious about the amounts of my applications, so this project is a wa
   kept and only lose the reference. Nothing is deleted in cascade by surprise.
 
 ### Statistics
+- Only applications you have actually sent are counted. Ones still in **Uusi** stay out of the KPI
+  cards and the month and industry charts until you apply, so saving postings doesn't lower the
+  rates. The Total card shows how many are waiting, and the status chart includes them. A posting
+  that goes from Uusi straight to Vetäydyin was never sent and is not counted either.
 - KPI cards:
-  - **Total:** all applications.
+  - **Total:** all sent applications.
   - **Active:** applications whose status is Applied, Interviewing or Offered.
   - **Response rate:** applications that have *ever* reached Interviewing, Offered, Accepted or
     Rejected, as a share of all applications.

@@ -63,10 +63,12 @@
         <StackPanel Margin="8">
             <!-- KPI-kortit -->
             <UniformGrid Rows="1" Columns="4" Margin="0,0,-10,12">
-                <Border Style="{StaticResource Card}">
+                <Border Style="{StaticResource Card}"
+                        ToolTip="Lähetetyt hakemukset. Uusi-tilaiset ilmoitukset tulevat lukuihin mukaan, kun ne on haettu.">
                     <StackPanel>
                         <TextBlock Text="Hakemuksia yhteensä" Style="{StaticResource CardTitle}" />
                         <TextBlock x:Name="TotalText" Text="{Binding Total}" Style="{StaticResource CardValue}" />
+                        <TextBlock x:Name="TotalDetailText" Text="{Binding TotalDetail}" Style="{StaticResource CardDetail}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}">
@@ -99,7 +101,7 @@
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Total}" Value="0">
+                            <DataTrigger Binding="{Binding HasNoApplications}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>

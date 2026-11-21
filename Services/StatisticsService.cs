@@ -7,8 +7,13 @@ namespace JobApplicationManager.Services
     /// <summary>Yksi palkki: nimi, lukumäärä ja osuus suurimmasta (0–1) palkin pituutta varten.</summary>
     public sealed record CountItem(string Label, int Count, double Fraction);
 
+    /// <summary>
+    /// Luvut lasketaan lähetetyistä hakemuksista (ks. <see cref="StatisticsService.IsApplied"/>). Uusi-tilaiset,
+    /// vielä hakematta olevat näkyvät vain <see cref="NotApplied"/>-luvussa ja tilajakaumassa.
+    /// </summary>
     public sealed record StatisticsSummary(
         int Total,
+        int NotApplied,
         int Active,
         int Responded,
         int Interviewed,
@@ -41,10 +46,14 @@ namespace JobApplicationManager.Services
 
         public static StatisticsSummary Calculate(IEnumerable<JobApplication> applications, DateTime today)
         {
-            var list = applications.ToList();
+            var all = applications.ToList();
+            // Hakematta olevat eivät ole vielä voineet saada vastausta, joten ne pidetään poissa luvuista,
+            // jotta vastaus- ja haastatteluprosentit eivät laske pelkästä ilmoitusten kirjaamisesta.
+            var list = all.Where(IsApplied).ToList();
 
+            // Tilajakaumassa ovat kaikki hakemukset, myös Uusi.
             var byStatus = Enum.GetValues<ApplicationStatus>()
-                .Select(s => (Label: s.GetDescription(), Count: list.Count(a => a.Status == s)));
+                .Select(s => (Label: s.GetDescription(), Count: all.Count(a => a.Status == s)));
 
             // 12 viimeistä kuukautta kuluva mukaan lukien, vanhin ensin.
             var culture = CultureInfo.GetCultureInfo("fi-FI");
@@ -63,12 +72,28 @@ namespace JobApplicationManager.Services
 
             return new StatisticsSummary(
                 Total: list.Count,
+                NotApplied: all.Count - list.Count,
                 Active: list.Count(a => ActiveStatuses.Contains(a.Status)),
                 Responded: list.Count(HasResponse),
                 Interviewed: list.Count(ReachedInterview),
                 ByStatus: ToBars(byStatus),
                 ByMonth: ToBars(byMonth),
                 ByIndustry: ToBars(byIndustry));
+        }
+
+        /// <summary>
+        /// Hakemus on lähetetty: tila ei ole Uusi, ja se on joskus ollut jokin muu kuin Uusi tai Vetäydyin.
+        /// Uusi → Vetäydyin tarkoittaa, että ilmoitus jäi hakematta. Vanhat, ennen Uusi-tilaa luodut hakemukset
+        /// (historiassa ei ole Uusi-tilaa) lasketaan lähetetyiksi tilasta riippumatta.
+        /// </summary>
+        public static bool IsApplied(JobApplication application)
+        {
+            if (application.Status == ApplicationStatus.New)
+                return false;
+
+            var reached = ReachedStatuses(application).ToList();
+            return !reached.Contains(ApplicationStatus.New)
+                   || reached.Any(s => s is not (ApplicationStatus.New or ApplicationStatus.Withdrawn));
         }
 
         /// <summary>

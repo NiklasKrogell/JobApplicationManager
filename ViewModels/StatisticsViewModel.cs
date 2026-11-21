@@ -31,6 +31,14 @@ namespace JobApplicationManager.ViewModels
         [ObservableProperty]
         private int total;
 
+        /// <summary>Esim. "+ 3 uutta, ei vielä haettu"; tyhjä, jos Uusi-tilaisia ei ole.</summary>
+        [ObservableProperty]
+        private string totalDetail = string.Empty;
+
+        /// <summary>Ei yhtään hakemusta missään tilassa (tyhjän tilan ohjeteksti).</summary>
+        [ObservableProperty]
+        private bool hasNoApplications = true;
+
         [ObservableProperty]
         private int active;
 
@@ -62,6 +70,8 @@ namespace JobApplicationManager.ViewModels
             var stats = StatisticsService.Calculate(_db.JobApplications.Local, DateTime.Today);
 
             Total = stats.Total;
+            TotalDetail = stats.NotApplied > 0 ? $"+ {stats.NotApplied} uutta, ei vielä haettu" : string.Empty;
+            HasNoApplications = stats.Total + stats.NotApplied == 0;
             Active = stats.Active;
             ResponseRateText = FormatPercent(stats.ResponseRate);
             ResponseDetail = $"{stats.Responded} / {stats.Total} hakemusta";

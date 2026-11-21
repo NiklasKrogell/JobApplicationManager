@@ -4,8 +4,15 @@ using System.ComponentModel;
 
 namespace JobApplicationManager.Model
 {
+    /// <summary>
+    /// Hakemuksen tila. Tallennetaan kantaan nimenä, joten järjestystä voi muuttaa ja uusia tiloja lisätä
+    /// ilman migraatiota. Järjestys on myös näytettävä järjestys (valintalista, suodatin, tilastot).
+    /// </summary>
     public enum ApplicationStatus
     {
+        /// <summary>Ilmoitus on kirjattu, mutta hakemusta ei ole vielä lähetetty.</summary>
+        [Description("Uusi")]
+        New,
         [Description("Haettu")]
         Applied,
         [Description("Haastattelu")]
@@ -29,7 +36,7 @@ namespace JobApplicationManager.Model
         private Company? _company;
         private string? _position;
         private DateTime _applicationDate = DateTime.Today;
-        private ApplicationStatus _status;
+        private ApplicationStatus _status = ApplicationStatus.New;
         private string? _location;
         private string? _jobPostingUrl;
         private string? _notes;
