@@ -37,7 +37,10 @@ namespace JobApplicationManager
                 _db = new AppDbContext();
                 _db.Database.Migrate();
 
-                var window = new MainWindow { DataContext = new MainViewModel(_db, _dialogs) };
+                var settings = new SettingsService();
+                var keywordExtraction = new KeywordExtractionService(settings);
+
+                var window = new MainWindow { DataContext = new MainViewModel(_db, _dialogs, settings, keywordExtraction) };
                 // Näkyvä merkki siitä, ettei kyseessä ole oikea data (kehitysajo tai testi).
                 if (AppDbContext.IsCustomDatabase)
                     window.Title += $" [{System.IO.Path.GetFileName(AppDbContext.DatabasePath)}]";

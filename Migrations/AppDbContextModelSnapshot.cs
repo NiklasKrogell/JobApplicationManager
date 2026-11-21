@@ -51,6 +51,19 @@ namespace JobApplicationManager.Migrations
                     b.ToTable("Activities");
                 });
 
+            modelBuilder.Entity("JobApplicationManager.Model.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings");
+                });
+
             modelBuilder.Entity("JobApplicationManager.Model.Company", b =>
                 {
                     b.Property<int>("Id")
@@ -107,7 +120,13 @@ namespace JobApplicationManager.Migrations
                     b.Property<string>("ContactPhone")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("JobPostingText")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("JobPostingUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KeywordsJson")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Location")

@@ -7,6 +7,49 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ApplicationsViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="640" d:DesignWidth="1150">
+    <UserControl.Resources>
+        <!-- Avainsanaryhmän otsikko (Teknologiat, Vaatimukset, ...) -->
+        <Style x:Key="KeywordGroupHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="DimGray" />
+            <Setter Property="Margin" Value="0,8,0,0" />
+        </Style>
+
+        <!-- Avainsanat "chippeinä" rivittyvänä listana; tyhjä lista näkyy viivana -->
+        <Style x:Key="KeywordChips" TargetType="ItemsControl">
+            <Setter Property="Margin" Value="0,2,0,0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <Border Margin="0,2,4,2" Padding="7,1" CornerRadius="9" BorderThickness="1"
+                                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+                            <TextBlock Text="{Binding}" />
+                        </Border>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="HasItems" Value="False">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <TextBlock Text="–" Foreground="Gray" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="420" />
@@ -222,6 +265,63 @@
                                      AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                                      AutomationProperties.Name="Muistiinpanot"
                                      Text="{Binding SelectedApplication.Notes, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <!-- ===== Työpaikkailmoitus ja Clauden poimimat avainsanat ===== -->
+                            <TextBlock Text="Työpaikkailmoitus" Style="{StaticResource SectionHeader}" />
+                            <TextBox x:Name="JobPostingTextBox" Margin="0,4,0,0" MinHeight="120" MaxHeight="260"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                     AutomationProperties.Name="Työpaikkailmoituksen teksti"
+                                     ToolTip="Liitä tähän ilmoituksen teksti"
+                                     Text="{Binding SelectedApplication.JobPostingText, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button x:Name="ExtractKeywordsButton" Style="{StaticResource ActionButton}"
+                                        Content="Poimi avainsanat"
+                                        ToolTip="Claude poimii ilmoituksesta teknologiat, taidot ja vaatimukset (API-avain Asetuksissa)"
+                                        Command="{Binding ExtractKeywordsCommand}" />
+                                <StackPanel x:Name="ExtractingIndicator" Orientation="Horizontal" Margin="10,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding ExtractKeywordsCommand.IsRunning, Converter={StaticResource BoolToVisibility}}">
+                                    <ProgressBar Width="80" Height="10" IsIndeterminate="True" />
+                                    <TextBlock Text="Poimitaan…" Margin="6,0,0,0" Foreground="Gray" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel x:Name="KeywordsPanel" Margin="0,4,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedKeywords}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <TextBlock Text="Teknologiat" Style="{StaticResource KeywordGroupHeader}" />
+                                <ItemsControl x:Name="TechnologiesList" Style="{StaticResource KeywordChips}"
+                                              AutomationProperties.Name="Teknologiat"
+                                              ItemsSource="{Binding SelectedKeywords.Technologies}" />
+
+                                <TextBlock Text="Pehmeät taidot" Style="{StaticResource KeywordGroupHeader}" />
+                                <ItemsControl x:Name="SoftSkillsList" Style="{StaticResource KeywordChips}"
+                                              AutomationProperties.Name="Pehmeät taidot"
+                                              ItemsSource="{Binding SelectedKeywords.SoftSkills}" />
+
+                                <TextBlock Text="Vaatimukset" Style="{StaticResource KeywordGroupHeader}" />
+                                <ItemsControl x:Name="RequirementsList" Style="{StaticResource KeywordChips}"
+                                              AutomationProperties.Name="Vaatimukset"
+                                              ItemsSource="{Binding SelectedKeywords.Requirements}" />
+
+                                <TextBlock Text="Eduksi katsotaan" Style="{StaticResource KeywordGroupHeader}" />
+                                <ItemsControl x:Name="AdvantagesList" Style="{StaticResource KeywordChips}"
+                                              AutomationProperties.Name="Eduksi katsotaan"
+                                              ItemsSource="{Binding SelectedKeywords.ConsideredAnAdvantage}" />
+
+                                <TextBlock Margin="0,8,0,0">
+                                    <Run Text="Ilmoituksen kieli: " Foreground="DimGray" />
+                                    <Run x:Name="PostingLanguageRun" Text="{Binding KeywordsLanguageText, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
 
                             <!-- ===== Tapahtumaloki ===== -->
                             <TextBlock Text="Tapahtumat" Style="{StaticResource SectionHeader}" />

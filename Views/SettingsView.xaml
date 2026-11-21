@@ -1,0 +1,46 @@
+<UserControl x:Class="JobApplicationManager.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:JobApplicationManager.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="640" d:DesignWidth="1150">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="14,10" MaxWidth="640" HorizontalAlignment="Left">
+            <TextBlock Text="Asetukset" Style="{StaticResource ViewTitle}" />
+
+            <TextBlock Text="Claude API" Style="{StaticResource SectionHeader}" />
+            <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
+                Työpaikkailmoitusten avainsanat poimitaan Clauden avulla (malli
+                <Run Text="{Binding ModelName, Mode=OneWay}" />). Tarvitset oman Anthropic API -avaimen,
+                jonka saat osoitteesta console.anthropic.com.
+            </TextBlock>
+            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="Gray">
+                Avain tallennetaan tämän koneen tietokantaan Windows-käyttäjätunnuksellesi salattuna (DPAPI).
+                Se on salattu myös varmuuskopioissa, ja sen voi purkaa vain sama Windows-käyttäjä.
+            </TextBlock>
+
+            <TextBlock x:Name="ApiKeyStatusText" Margin="0,12,0,0" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Text="{Binding ApiKeyStatus}" />
+
+            <Label Content="Uusi API-avain" Target="{Binding ElementName=ApiKeyBox}" />
+            <DockPanel>
+                <Button x:Name="SaveApiKeyButton" DockPanel.Dock="Right" Margin="6,0,0,0"
+                        Style="{StaticResource ActionButton}" Content="Tallenna"
+                        Command="{Binding SaveApiKeyCommand}" />
+                <PasswordBox x:Name="ApiKeyBox" Padding="2,3" PasswordChanged="OnApiKeyPasswordChanged"
+                             AutomationProperties.Name="Uusi API-avain">
+                    <PasswordBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SaveApiKeyCommand}" />
+                    </PasswordBox.InputBindings>
+                </PasswordBox>
+            </DockPanel>
+
+            <Button x:Name="RemoveApiKeyButton" Margin="0,12,0,0" HorizontalAlignment="Left"
+                    Style="{StaticResource ActionButton}" Content="Poista avain"
+                    Command="{Binding RemoveApiKeyCommand}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

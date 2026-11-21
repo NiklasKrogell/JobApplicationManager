@@ -29,6 +29,7 @@ namespace JobApplicationManager.Context
         public DbSet<Industry> Industries { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<AppSetting> AppSettings { get; set; }
 
         public AppDbContext()
         {
@@ -69,6 +70,8 @@ namespace JobApplicationManager.Context
                     .HasForeignKey(a => a.JobApplicationId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<AppSetting>().HasKey(s => s.Key);
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)

@@ -26,5 +26,8 @@
         <TabItem x:Name="StatisticsTab" Header="Tilastot">
             <views:StatisticsView DataContext="{Binding Statistics}" />
         </TabItem>
+        <TabItem x:Name="SettingsTab" Header="Asetukset">
+            <views:SettingsView DataContext="{Binding Settings}" />
+        </TabItem>
     </TabControl>
 </Window>

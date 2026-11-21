@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using System.Windows.Data;
 
 namespace JobApplicationManager.ViewModels
@@ -18,13 +21,19 @@ namespace JobApplicationManager.ViewModels
     /// </summary>
     public partial class ApplicationsViewModel : ObservableObject
     {
+        // Ääkköset tallennetaan kantaan luettavina (oletuksena System.Text.Json kirjoittaisi ne ä-muodossa).
+        private static readonly JsonSerializerOptions KeywordsJsonOptions =
+            new() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+
         private readonly AppDbContext _db;
         private readonly IDialogService _dialogs;
+        private readonly IKeywordExtractionService _keywordExtraction;
 
-        public ApplicationsViewModel(AppDbContext db, IDialogService dialogs)
+        public ApplicationsViewModel(AppDbContext db, IDialogService dialogs, IKeywordExtractionService keywordExtraction)
         {
             _db = db;
             _dialogs = dialogs;
+            _keywordExtraction = keywordExtraction;
 
             // Yritykset ensin, jotta hakemusten Company-viittaukset täyttyvät suoraan muistissa olevista olioista.
             _db.Companies.Load();
@@ -70,10 +79,30 @@ namespace JobApplicationManager.ViewModels
         [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
         [NotifyCanExecuteChangedFor(nameof(StartAddCompanyCommand))]
         [NotifyCanExecuteChangedFor(nameof(OpenPostingUrlCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ExtractKeywordsCommand))]
         private JobApplication? selectedApplication;
 
         [ObservableProperty]
         private bool isAddingCompany;
+
+        // ---------- Työpaikkailmoituksen avainsanat ----------
+
+        /// <summary>Valitun hakemuksen avainsanat (KeywordsJson luettuna), tai null jos niitä ei ole poimittu.</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(KeywordsLanguageText))]
+        private JobKeywords? selectedKeywords;
+
+        /// <summary>Ilmoituksen kieli suomeksi, esim. "englanti (en)".</summary>
+        public string KeywordsLanguageText => SelectedKeywords?.Language switch
+        {
+            null or "" => "–",
+            "fi" => "suomi (fi)",
+            "en" => "englanti (en)",
+            "sv" => "ruotsi (sv)",
+            "de" => "saksa (de)",
+            "et" => "viro (et)",
+            var code => code
+        };
 
         // ---------- Tapahtumaloki ----------
 
@@ -111,6 +140,7 @@ namespace JobApplicationManager.ViewModels
                 newValue.PropertyChanged += OnSelectedApplicationPropertyChanged;
 
             IsAddingCompany = false;
+            SelectedKeywords = ParseKeywords(newValue?.KeywordsJson);
 
             ActivitiesView = newValue is null ? null : CreateActivitiesView(newValue);
             NewActivityDate = DateTime.Today;
@@ -131,8 +161,33 @@ namespace JobApplicationManager.ViewModels
 
         private void OnSelectedApplicationPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(JobApplication.JobPostingUrl))
-                OpenPostingUrlCommand.NotifyCanExecuteChanged();
+            switch (e.PropertyName)
+            {
+                case nameof(JobApplication.JobPostingUrl):
+                    OpenPostingUrlCommand.NotifyCanExecuteChanged();
+                    break;
+                case nameof(JobApplication.JobPostingText):
+                    ExtractKeywordsCommand.NotifyCanExecuteChanged();
+                    break;
+                case nameof(JobApplication.KeywordsJson):
+                    SelectedKeywords = ParseKeywords(SelectedApplication?.KeywordsJson);
+                    break;
+            }
+        }
+
+        private static JobKeywords? ParseKeywords(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<JobKeywords>(json);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         // ---------- Haku ja suodatus ----------
@@ -293,6 +348,32 @@ namespace JobApplicationManager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Poimii ilmoitustekstistä avainsanat Claudella. Tulos jää hakemukselle tallentamattomaksi muutokseksi
+        /// kuten muutkin lomakkeen muokkaukset (Tallenna / Ctrl+S). Komento on pois käytöstä poiminnan ajan.
+        /// </summary>
+        [RelayCommand(CanExecute = nameof(CanExtractKeywords))]
+        private async Task ExtractKeywordsAsync()
+        {
+            if (SelectedApplication is not { } application)
+                return;
+
+            if (!string.IsNullOrEmpty(application.KeywordsJson) &&
+                !_dialogs.Confirm("Hakemukselle on jo poimittu avainsanat.\n\nKorvataanko ne uusilla?", "Poimi avainsanat"))
+                return;
+
+            try
+            {
+                var keywords = await _keywordExtraction.ExtractAsync(application.JobPostingText ?? string.Empty);
+                // Kirjoitetaan talteen otetulle hakemukselle, vaikka valinta olisi ehtinyt vaihtua odotuksen aikana.
+                application.KeywordsJson = JsonSerializer.Serialize(keywords, KeywordsJsonOptions);
+            }
+            catch (KeywordExtractionException ex)
+            {
+                _dialogs.ShowError(ex.Message, "Avainsanojen poiminta");
+            }
+        }
+
         [RelayCommand(CanExecute = nameof(HasSelectedApplication))]
         private void StartAddCompany()
         {
@@ -380,6 +461,8 @@ namespace JobApplicationManager.ViewModels
             => SelectedApplication is not null && !string.IsNullOrWhiteSpace(NewActivityDescription);
 
         private bool CanOpenPostingUrl() => TryGetPostingUri(out _);
+
+        private bool CanExtractKeywords() => !string.IsNullOrWhiteSpace(SelectedApplication?.JobPostingText);
 
         /// <summary>
         /// Hyväksyy vain http/https-osoitteet, ettei linkkikentän kautta voi käynnistää paikallisia ohjelmia.

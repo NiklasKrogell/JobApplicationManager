@@ -36,6 +36,8 @@ namespace JobApplicationManager.Model
         private string? _contactName;
         private string? _contactEmail;
         private string? _contactPhone;
+        private string? _jobPostingText;
+        private string? _keywordsJson;
 
         public int Id { get; set; }
         public int? CompanyId { get; set; }
@@ -98,6 +100,20 @@ namespace JobApplicationManager.Model
         {
             get => _contactPhone;
             set => SetProperty(ref _contactPhone, value);
+        }
+
+        /// <summary>Työpaikkailmoituksen teksti, josta avainsanat poimitaan.</summary>
+        public string? JobPostingText
+        {
+            get => _jobPostingText;
+            set => SetProperty(ref _jobPostingText, value);
+        }
+
+        /// <summary>Clauden poimimat avainsanat JSON-muodossa (ks. JobKeywords).</summary>
+        public string? KeywordsJson
+        {
+            get => _keywordsJson;
+            set => SetProperty(ref _keywordsJson, value);
         }
 
         public virtual ICollection<Activity> Activities { get; set; } = new ObservableCollection<Activity>();

@@ -15,18 +15,21 @@ namespace JobApplicationManager.ViewModels
         public const int ApplicationsTab = 0;
         public const int CompaniesTab = 1;
         public const int StatisticsTab = 2;
+        public const int SettingsTab = 3;
 
         private readonly AppDbContext _db;
         private readonly IDialogService _dialogs;
 
-        public MainViewModel(AppDbContext db, IDialogService dialogs)
+        public MainViewModel(AppDbContext db, IDialogService dialogs, SettingsService settings,
+            IKeywordExtractionService keywordExtraction)
         {
             _db = db;
             _dialogs = dialogs;
-            Applications = new ApplicationsViewModel(db, dialogs);
+            Applications = new ApplicationsViewModel(db, dialogs, keywordExtraction);
             Companies = new CompaniesViewModel(db, dialogs);
             Companies.OpenApplicationRequested += OnOpenApplicationRequested;
             Statistics = new StatisticsViewModel(db);
+            Settings = new SettingsViewModel(settings, dialogs);
         }
 
         public ApplicationsViewModel Applications { get; }
@@ -34,6 +37,8 @@ namespace JobApplicationManager.ViewModels
         public CompaniesViewModel Companies { get; }
 
         public StatisticsViewModel Statistics { get; }
+
+        public SettingsViewModel Settings { get; }
 
         [ObservableProperty]
         private int selectedTabIndex = ApplicationsTab;
@@ -45,6 +50,7 @@ namespace JobApplicationManager.ViewModels
                 case ApplicationsTab: Applications.Activate(); break;
                 case CompaniesTab: Companies.Activate(); break;
                 case StatisticsTab: Statistics.Refresh(); break;
+                case SettingsTab: Settings.Refresh(); break;
             }
         }
 

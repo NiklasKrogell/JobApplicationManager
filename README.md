@@ -24,6 +24,11 @@ I also was curious about the amounts of my applications, so this project is a wa
   link (opens in the browser, http/https only), contact name, email and phone, and notes.
 - Add a company inline ("+ Uusi yritys"). An existing company with the same name is reused
   instead of creating a duplicate.
+- **Job posting keywords (Työpaikkailmoitus)**: paste the posting text into the application and
+  press "Poimi avainsanat". Claude Haiku 5.5 extracts technologies, soft skills, requirements,
+  things considered an advantage, and the posting's language. The result is a structured JSON
+  response that is saved with the application and shown as tags on the form. Needs an Anthropic
+  API key (see [Settings](#settings)).
 - **Activity log (Tapahtumat)** for each application: add notes, emails, calls, interviews and
   other events with a date. Status changes appear automatically. Newest entries are shown first.
 - **CSV export** of the visible (filtered) list. The file opens correctly in Finnish Excel:
@@ -53,6 +58,13 @@ I also was curious about the amounts of my applications, so this project is a wa
   still counts as answered and interviewed. "Withdrawn" alone does not count as a response,
   because it is your decision, not the employer's.
 
+### Settings
+- **Anthropic API key** for the keyword extraction. You enter it on the "Asetukset" tab, and the
+  tab only ever shows it masked (`sk-ant-…abcd`).
+- The key is stored in the app's SQLite database (`AppSettings` table), encrypted with Windows
+  DPAPI for the current Windows user. It never leaves your machine except in requests to the
+  Anthropic API.
+
 ---
 
 ## Getting started
@@ -60,6 +72,8 @@ I also was curious about the amounts of my applications, so this project is a wa
 ### Requirements
 - Windows 10/11
 - [.NET 10 SDK](https://dotnet.microsoft.com/) (includes the desktop runtime the app needs)
+- Optional: an [Anthropic API key](https://console.anthropic.com/), only for the job posting
+  keyword extraction. Everything else works without it.
 
 ### Run from source
 ```powershell
@@ -107,6 +121,15 @@ The database is deliberately *not* stored next to the executable, so that rebuil
 **Restoring a backup:** close the app, then copy the backup file over `job_applications.db` in the
 folder above.
 
+**The API key and backups:** backups copy the whole database, so they contain the API key too, but
+only in encrypted form. A backup restored by the same Windows user keeps working. On another
+machine or user account the key can't be decrypted, and the Settings tab asks you to enter it
+again. The development database has its own settings, so a development run needs the key entered
+separately.
+
+The databases are outside the repository, and `.gitignore` also excludes `*.db` files, so a copy
+saved into the project folder by accident isn't committed.
+
 ---
 
 ## How it's built
@@ -118,18 +141,22 @@ folder above.
 | UI | WPF on .NET 10 (`net10.0-windows`) |
 | MVVM | [CommunityToolkit.Mvvm](https://learn.microsoft.com/dotnet/communitytoolkit/mvvm/) 8.4 (`[ObservableProperty]`, `[RelayCommand]`) |
 | Data | EF Core 10 + SQLite, lazy-loading proxies, code-first migrations |
+| AI | Official [Anthropic C# SDK](https://www.nuget.org/packages/Anthropic) with Claude Haiku 5.5 (`claude-haiku-5-5`) and structured outputs (JSON schema) |
+| Secrets | Windows DPAPI (`ProtectedData`, current user) for the stored API key |
 | Tooling | `dotnet-ef` as a local tool (`dotnet-tools.json`) |
 
 There are no other dependencies, and the charts are plain XAML.
 
 ### Project structure
 ```
-Model/          Entities: JobApplication, Company, Industry, Activity (+ enums)
+Model/          Entities: JobApplication, Company, Industry, Activity, AppSetting (+ enums),
+                and JobKeywords (the keyword extraction result)
 Context/        AppDbContext (configuration, validation, automatic activity log)
 Migrations/     EF Core migrations
 ViewModels/     MainViewModel + one ViewModel per tab
 Views/          One UserControl per tab
-Services/       Statistics, CSV export, dialogs, shared save helper
+Services/       Statistics, CSV export, dialogs, shared save helper, settings (encrypted API key),
+                keyword extraction with Claude (KeywordExtractionService)
 Converters/     Enum → Finnish text, null → bool
 Helpers/        Enum [Description] lookup
 publish.ps1     Install/update script
@@ -143,4 +170,6 @@ publish.ps1     Install/update script
 - A separate contacts table, if the same recruiter appears across many applications.
 - An xUnit project for the statistics, validation and CSV export.
 - Optional auto-update (ClickOnce or Velopack) if the app is ever used on several machines.
-- AI features: summarise notes, suggest next steps, or generate a cover letter from the job description.
+- More AI features on top of the keyword extraction: summarise notes, suggest next steps, or
+  generate a cover letter from the job description.
+- Statistics on the extracted keywords, e.g. the most requested technologies across all applications.
